@@ -1,4 +1,8 @@
 # 1. Complete the following steps using the OneLogin API. Show a screenshot for each:
+
+# pip install pipenv
+# pipenv install requests
+
 # 2. Create two OneLogin applications called “TorontoNews” and “MontrealNews” using the OneLogin Access Template (TIPO DE CONECTOR).
 # 3. Create a role named “TorontoReader” and assign it to the “TorontoNews” application. 
 # 4. Create a role named “MontrealReader” and assign it to the “MontrealNews” application.
