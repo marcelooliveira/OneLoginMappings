@@ -45,13 +45,13 @@ montreal_app_id = json_data['id']
 
 response = requests.get(api_domain + '/api/1/roles?name=TorontoReader', headers=headers)
 json_data = json.loads(response.content)
-toronto_reader_role_id = json_data[0]['id']
+toronto_reader_role_id = json_data['data'][0]['id']
 
 # 4. Create a role named “MontrealReader” and assign it to the “MontrealNews” application.
 
-response = requests.get(api_domain + '/api/1/roles?name=MontrealNews', headers=headers)
+response = requests.get(api_domain + '/api/1/roles?name=MontrealReader', headers=headers)
 json_data = json.loads(response.content)
-montreal_reader_role_id = json_data[0]['id']
+montreal_reader_role_id = json_data['data'][0]['id']
 
 # 5. Add a custom user field named “City” with a short name of “city”
 
@@ -82,13 +82,15 @@ mapping_data = {
       {
          "action":"add_role",
          "value":[
-            montreal_reader_role_id
+            str(montreal_reader_role_id)
          ]
       }
    ]
 }
 
 response = requests.post(api_domain + '/api/2/mappings', headers=headers, data=json.dumps(mapping_data))
+json_data = json.loads(response.content)
+mapping_montreal_id = json_data['id']
 
 # 6.2. Using the API, create a mapping 
 # that gives access to the TorontoNews app 
@@ -113,13 +115,15 @@ mapping_data = {
       {
          "action":"add_role",
          "value":[
-            toronto_reader_role_id
+            str(toronto_reader_role_id)
          ]
       }
    ]
 }
 
 response = requests.post(api_domain + '/api/2/mappings', headers=headers, data=json.dumps(mapping_data))
+json_data = json.loads(response.content)
+mapping_toronto_id = json_data['id']
 
 # 6.3. Create a couple of users with city = Montreal and city = Toronto. 
 # Notice that they are automatically assigned the MontrealReader or TorontoReader role,
@@ -129,7 +133,10 @@ user_data = {
     "email": "amelie.gagnon@myemail.com",
     "firstname": "Amélie",
     "lastname": "Gagnon",
-    "username": "Amélie Gagnon"
+    "username": "Amélie Gagnon",
+    "custom_attributes": {
+      "city": "Montreal",
+  }
 }
 
 response = requests.post(api_domain + '/api/2/users', headers=headers, data=json.dumps(user_data))
@@ -140,7 +147,10 @@ user_data = {
     "email": "thomas.tremblay@myemail.com",
     "firstname": "Thomas",
     "lastname": "Tremblay",
-    "username": "Thomas Tremblay"
+    "username": "Thomas Tremblay",
+    "custom_attributes": {
+      "city": "Toronto",
+  }
 }
 
 response = requests.post(api_domain + '/api/2/users', headers=headers, data=json.dumps(user_data))
@@ -152,6 +162,9 @@ user2_id = json_data['id']
 # to any new user whose department is “Accounting”.
 
 # Delete data
+response = requests.delete(api_domain + '/api/2/mappings/' + str(mapping_montreal_id), headers=headers)
+response = requests.delete(api_domain + '/api/2/mappings/' + str(mapping_toronto_id), headers=headers)
+
 response = requests.delete(api_domain + '/api/2/users/' + str(user1_id), headers=headers)
 response = requests.delete(api_domain + '/api/2/users/' + str(user2_id), headers=headers)
 
