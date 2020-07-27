@@ -1,12 +1,13 @@
-from mysecrets import ONELOGIN_CLIENT_ID, ONELOGIN_CLIENT_SECRET
-import requests
-import json
-# 1. Complete the following steps using the OneLogin API. Show a screenshot for each:
-
 # pip install pipenv
 # pipenv install requests
+from mysecrets import ONELOGIN_CLIENT_ID, ONELOGIN_CLIENT_SECRET
 
-r = requests.post('https://api.us.onelogin.com/auth/oauth2/v2/token',
+import requests
+import json
+
+# 1. Complete the following steps using the OneLogin API. Show a screenshot for each:
+api_domain = 'https://api.us.onelogin.com'
+r = requests.post(api_domain + '/auth/oauth2/v2/token',
   auth=(ONELOGIN_CLIENT_ID, ONELOGIN_CLIENT_SECRET),
   json={
     "grant_type": "client_credentials"
@@ -15,51 +16,41 @@ r = requests.post('https://api.us.onelogin.com/auth/oauth2/v2/token',
 response = r.json()
 
 access_token = response['access_token']
-api_domain = 'https://api.us.onelogin.com'
 headers = headers = {'Authorization': 'Bearer ' + access_token, 'content-type': 'application/json'}
 
-
-response = requests.get(api_domain + '/api/2/mappings', headers=headers)
-json_data = json.loads(response.content)
-
-
-# 2. Create two OneLogin apps called “TorontoNews” and “MontrealNews” using the OneLogin Access Template (connector type).
-
-# 2.1. Get Connector Id for 'OneLogin Access Template'
-response = requests.get(api_domain + '/api/2/connectors?name=OneLogin+Access+Template', headers=headers)
-json_data = json.loads(response.content)
-connector_id = json_data[0]['id']
-
-# 2.2. Create apps
-app_data = { "connector_id": connector_id, "name": "TorontoNews" }
-response = requests.post(api_domain + '/api/2/apps', headers=headers, data=json.dumps(app_data))
-json_data = json.loads(response.content)
-toronto_app_id = json_data['id']
-
-app_data = { "connector_id": connector_id, "name": "MontrealNews" }
-response = requests.post(api_domain + '/api/2/apps', headers=headers, data=json.dumps(app_data))
-json_data = json.loads(response.content)
-montreal_app_id = json_data['id']
-
-# 3. Create a role named “TorontoReader” and assign it to the “TorontoNews” application. 
+# 2. Create a role named “TorontoReader”. 
 
 response = requests.get(api_domain + '/api/1/roles?name=TorontoReader', headers=headers)
 json_data = json.loads(response.content)
 toronto_reader_role_id = json_data['data'][0]['id']
 
-# 4. Create a role named “MontrealReader” and assign it to the “MontrealNews” application.
+# 3. Create a role named “MontrealReader”.
 
 response = requests.get(api_domain + '/api/1/roles?name=MontrealReader', headers=headers)
 json_data = json.loads(response.content)
 montreal_reader_role_id = json_data['data'][0]['id']
 
-# 5. Add a custom user field named “City” with a short name of “city”
+# 4. Create two OneLogin apps called “TorontoNews” and “MontrealNews” using the OneLogin Access Template (connector type).
 
-print('PAUSE HERE TO ASSIGN “TorontoReader” AND “MontrealReader” TO “TorontoNews” AND “MontrealReader” APPS.')
+# 4.1. Get Connector Id for 'OneLogin Access Template'
+response = requests.get(api_domain + '/api/2/connectors?name=OneLogin+Access+Template', headers=headers)
+json_data = json.loads(response.content)
+connector_id = json_data[0]['id']
 
-# 6. Complete the following steps using the OneLogin API. Show code samples demonstrating how to complete each step:
+# 4.2. Create apps with roles assigned to them
+app_data = { "connector_id": connector_id, "name": "TorontoNews", "role_ids": [toronto_reader_role_id] }
+response = requests.post(api_domain + '/api/2/apps', headers=headers, data=json.dumps(app_data))
+json_data = json.loads(response.content)
+toronto_app_id = json_data['id']
 
-# 6.1. Using the API, create a mapping 
+app_data = { "connector_id": connector_id, "name": "MontrealNews", "role_ids": [montreal_reader_role_id] }
+response = requests.post(api_domain + '/api/2/apps', headers=headers, data=json.dumps(app_data))
+json_data = json.loads(response.content)
+montreal_app_id = json_data['id']
+
+# 5. Complete the following steps using the OneLogin API. Show code samples demonstrating how to complete each step:
+
+# 5.1. Using the API, create a mapping 
 # that gives access to the MontrealNews app 
 # to those users whose city = Montreal. Do
 #  this by using “custom_attribute_city” as the condition source, 
@@ -92,7 +83,7 @@ response = requests.post(api_domain + '/api/2/mappings', headers=headers, data=j
 json_data = json.loads(response.content)
 mapping_montreal_id = json_data['id']
 
-# 6.2. Using the API, create a mapping 
+# 5.2. Using the API, create a mapping 
 # that gives access to the TorontoNews app 
 # to those users whose city = Toronto.
 # Do this by using “custom_attribute_city” as the condition source, 
@@ -125,7 +116,7 @@ response = requests.post(api_domain + '/api/2/mappings', headers=headers, data=j
 json_data = json.loads(response.content)
 mapping_toronto_id = json_data['id']
 
-# 6.3. Create a couple of users with city = Montreal and city = Toronto. 
+# 5.3. Create a couple of users with city = Montreal and city = Toronto. 
 # Notice that they are automatically assigned the MontrealReader or TorontoReader role,
 # which grants them access to the application they need to use.
 
@@ -157,11 +148,11 @@ response = requests.post(api_domain + '/api/2/users', headers=headers, data=json
 json_data = json.loads(response.content)
 user2_id = json_data['id']
 
-# 6.4. Give an example of how you’d use this in a business scenario:
+# 6. Give an example of how you’d use this in a business scenario:
 # you could set up a mapping that automatically adds the “QuickbooksUser” role 
 # to any new user whose department is “Accounting”.
 
-# Delete data
+# 7. Delete data
 response = requests.delete(api_domain + '/api/2/mappings/' + str(mapping_montreal_id), headers=headers)
 response = requests.delete(api_domain + '/api/2/mappings/' + str(mapping_toronto_id), headers=headers)
 
